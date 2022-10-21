@@ -1,12 +1,8 @@
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::Addr;
 
-///
-/// Structures
-///
 #[cw_serde]
 pub struct Config {
-    /// Admin of this contract
     pub owner: Addr,
 }
 
@@ -27,8 +23,8 @@ pub struct Game {
     pub id: u64,
     pub players: Vec<Addr>,
     pub status: GameStatus,
-    pub moves: Vec<u8>,
-    pub starts: Option<Addr>,
+    pub moves: Vec<String>,
+    pub next_turn: Option<Addr>,
 }
 
 #[cw_serde]
@@ -36,17 +32,11 @@ pub struct Move {
     pub position: u8,
 }
 
-///
-/// Instantiate
-///
 #[cw_serde]
 pub struct InstantiateMsg {
     pub owner: Option<String>,
 }
 
-///
-/// Execute
-///
 #[cw_serde]
 pub enum ExecuteMsg {
     CreateGame(CreateGameMsg),
@@ -56,7 +46,7 @@ pub enum ExecuteMsg {
 
 #[cw_serde]
 pub struct CreateGameMsg {
-    // TO-DO: create a private game?
+    // Feature: create a private game passing opponent Addr
 }
 
 #[cw_serde]

@@ -60,9 +60,10 @@ pub fn create_game(
         id: state.current_game_id,
         players: vec![info.sender],
         status: GameStatus::Open,
-        moves: vec![0; 9],
-        starts: None,
+        moves: vec!["-".to_string(); 9],
+        next_turn: None,
     };
+    GAME.save(deps.storage, 0, &new_game)?;
 
     STATE.save(
         deps.storage,
@@ -86,24 +87,27 @@ pub fn join_game(
     let mut game = GAME.load(deps.storage, msg.game_id)?;
 
     // TO-DO: check all edge cases for failure
-
     game.players.push(info.sender.clone());
 
     let hash = Sha256::new()
         .chain_update(game.players[0].to_string())
         .chain_update(info.sender.as_str())
         .finalize();
-
     if hash[0].leading_zeros() != 0 {
-        game.starts = Some(game.players[1].clone()); // second player starts [O, X]
+        game.next_turn = Some(game.players[1].clone()); // second player starts [O, X]
+        game.players = vec![game.players[1].clone(), game.players[0].clone()]; // re-arange players to have X on position 0
     } else {
-        game.starts = Some(game.players[0].clone()) // first player starts  [X, O]
+        game.next_turn = Some(game.players[0].clone()) // first player starts  [X, O]
     }
+
+    game.status = GameStatus::InProgress;
+
+    GAME.save(deps.storage, 0, &game)?;
 
     Ok(Response::new()
         .add_attribute("action", "join_game")
         .add_attribute("game_id", game.id.to_string())
-        .add_attribute("second_player", game.players[1].clone()))
+        .add_attribute("X", game.next_turn.unwrap())) // TO-DO: fix unwrap()
 }
 
 pub fn submit_move(
@@ -114,29 +118,39 @@ pub fn submit_move(
 ) -> Result<Response, ContractError> {
     let mut game = GAME.load(deps.storage, msg.game_id)?;
 
-    if game.status == GameStatus::Completed {
-        return Err(ContractError::Unauthorized {}); //TO-DO: create custom error
+    if game.status != GameStatus::InProgress {
+        return Err(ContractError::GameNotInProgress {});
     }
 
-    if game.moves[usize::from(msg.position)] != 0 {
-        return Err(ContractError::Unauthorized {}); //TO-DO: create custom error
+    if game.moves[msg.position as usize] != "-" {
+        return Err(ContractError::PositionTaken {});
     }
 
-    //TO-DO: check all edge cases for failure
-    let role: u8;
-    if Some(info.sender.clone()) == game.starts {
-        role = 0;
+    if game.next_turn != Some(info.sender.clone()) {
+        return Err(ContractError::NotYourTurn {});
+    }
+
+    // TO-DO: check all edge cases for failure
+
+    // TO-DO: decide how to track moves and roles
+    let role: String;
+    if game.players[0] == info.sender {
+        role = "X".to_string();
     } else {
-        role = 1;
+        role = "O".to_string();
     }
-    game.players.push(info.sender);
-    game.moves[usize::from(msg.position)] = role;
+
+    game.moves[msg.position as usize - 1] = role;
+
+    if !game.moves.contains(&"-".to_string()) {
+        game.status = GameStatus::Completed;
+    }
 
     GAME.save(deps.storage, msg.game_id, &game)?;
 
     Ok(Response::new()
         .add_attribute("action", "submit_move")
         .add_attribute("game_id", game.id.to_string())
-        .add_attribute("move", game.moves.last().unwrap_or(&0).to_string())
-        .add_attribute("amount", info.funds[0].amount))
+        .add_attribute("position", msg.position.to_string())
+        .add_attribute("role", game.moves[msg.position as usize - 1].to_string()))
 }
