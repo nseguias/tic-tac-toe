@@ -1,3 +1,5 @@
+use std::ops::Add;
+
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::Addr;
 
@@ -25,6 +27,7 @@ pub struct Game {
     pub status: GameStatus,
     pub moves: Vec<String>,
     pub next_turn: Option<Addr>,
+    pub winner: Option<Addr>,
 }
 
 #[cw_serde]

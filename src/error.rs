@@ -20,8 +20,11 @@ pub enum ContractError {
     #[error("Game not in progress")]
     GameNotInProgress {},
 
-    #[error("Job {job_id:?} not found")]
-    JobNotFound { job_id: String },
+    #[error(
+        "Position must be an integer between 1 and 9 (inclusive). Your choice was {}",
+        position
+    )]
+    InvalidPosition { position: String },
 
     #[error("Custom Error val: {val:?}")]
     CustomError { val: String },

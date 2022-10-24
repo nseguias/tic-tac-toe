@@ -8,7 +8,7 @@ use sha2::{Digest, Sha256};
 use crate::msg::{
     Config, CreateGameMsg, ExecuteMsg, Game, GameStatus, InstantiateMsg, State, SubmitMoveMsg,
 };
-use cosmwasm_std::{entry_point, DepsMut, Env, MessageInfo, Response};
+use cosmwasm_std::{entry_point, Addr, DepsMut, Env, MessageInfo, Response};
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -62,6 +62,7 @@ pub fn create_game(
         status: GameStatus::Open,
         moves: vec!["-".to_string(); 9],
         next_turn: None,
+        winner: None,
     };
     GAME.save(deps.storage, 0, &new_game)?;
 
@@ -130,6 +131,12 @@ pub fn submit_move(
         return Err(ContractError::NotYourTurn {});
     }
 
+    if msg.position < 1 || msg.position > 9 {
+        return Err(ContractError::InvalidPosition {
+            position: msg.position.to_string(),
+        });
+    }
+
     // TO-DO: check all edge cases for failure
 
     // TO-DO: decide how to track moves and roles
@@ -148,9 +155,23 @@ pub fn submit_move(
 
     GAME.save(deps.storage, msg.game_id, &game)?;
 
+    let winner = check_winner(game.moves.clone());
+
+    if winner != None {
+        game.status = GameStatus::Completed
+    }
+
+    if winner == Some(info.sender) {
+        // decide how to proclame winner
+    }
+
     Ok(Response::new()
         .add_attribute("action", "submit_move")
         .add_attribute("game_id", game.id.to_string())
         .add_attribute("position", msg.position.to_string())
         .add_attribute("role", game.moves[msg.position as usize - 1].to_string()))
+}
+
+fn check_winner(moves: Vec<String>) -> Option<Addr> {
+    Some(Addr::unchecked("player_1".to_string()))
 }
