@@ -34,7 +34,7 @@ fn proper_instantiation() {
     println!("{:?}", state);
     assert_eq!(res_expected, res);
     assert_eq!(res.attributes.len(), 2);
-    assert_eq!(state.current_game_id, 0);
+    assert_eq!(state.latest_game_id, 0);
     assert_eq!(config.owner, "instantiatoor");
 }
 
@@ -68,7 +68,7 @@ fn creating_a_game() {
     assert_eq!(res_expected, res);
     assert_eq!(res.attributes.len(), 3);
     assert_eq!(game.id, 0);
-    assert_eq!(state.current_game_id, 1);
+    assert_eq!(state.latest_game_id, 1);
 }
 
 #[test]

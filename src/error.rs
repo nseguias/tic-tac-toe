@@ -20,6 +20,9 @@ pub enum ContractError {
     #[error("Game not in progress")]
     GameNotInProgress {},
 
+    #[error("Cannot join a game that is InProgress or Completed")]
+    CantJoinGame {},
+
     #[error(
         "Position must be an integer between 1 and 9 (inclusive). Your choice was {}",
         position
