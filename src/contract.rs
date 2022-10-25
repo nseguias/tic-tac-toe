@@ -8,7 +8,7 @@ use sha2::{Digest, Sha256};
 use crate::msg::{
     Config, CreateGameMsg, ExecuteMsg, Game, GameStatus, InstantiateMsg, State, SubmitMoveMsg,
 };
-use cosmwasm_std::{entry_point, Addr, DepsMut, Env, MessageInfo, Response};
+use cosmwasm_std::{entry_point, DepsMut, Env, MessageInfo, Response};
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -68,7 +68,7 @@ pub fn create_game(
     };
     GAME.save(deps.storage, 0, &new_game)?;
 
-    //
+    // increments latest_game_id and saves it to storage
     STATE.save(
         deps.storage,
         &State {
@@ -163,7 +163,7 @@ pub fn submit_move(
     }
 
     // add player's decision in the correct position with their corresponding letter
-    game.moves[msg.position as usize - 1] = role;
+    game.moves[msg.position as usize - 1] = role.clone();
 
     // terminate the game if there're no more possible moves available
     if !game.moves.contains(&"-".to_string()) {
@@ -172,12 +172,21 @@ pub fn submit_move(
 
     GAME.save(deps.storage, msg.game_id, &game)?;
 
-    // if there's a winner, set the game status to completed and also set winner address
     let winner = check_winner(game.moves.clone());
-    if winner != None {
+
+    // if there's a winner, set the game status to completed
+    if winner != None && winner != Some("-".to_string()) {
         game.status = GameStatus::Completed;
-        game.winner = winner;
     }
+
+    // set winner to player's address
+    if winner == Some("0".to_string()) {
+        game.winner = Some(game.players[1].clone());
+    } else if winner != None {
+        game.winner = Some(game.players[0].clone());
+    }
+
+    // TO-DO: change next_turn address
 
     Ok(Response::new()
         .add_attribute("action", "submit_move")
@@ -186,8 +195,36 @@ pub fn submit_move(
         .add_attribute("role", game.moves[msg.position as usize - 1].to_string()))
 }
 
-fn check_winner(moves: Vec<String>) -> Option<Addr> {
-    Some(Addr::unchecked("player_1".to_string()))
+fn check_winner(moves: Vec<String>) -> Option<String> {
+    // checks if same role is in the winning positions, returns winning role or None if nobody won.
+    // TO-DO: it could return "-" so needs to be handled later (or fixed if time permits)
+
+    // win along horizontal?
+    for i in 0..3 {
+        if moves[0 + 3 * i] == moves[1 + 3 * i] && moves[0 + 3 * i] == moves[2 + 3 * i] {
+            return Some(moves[0 + 3 * i].clone());
+        }
+    }
+
+    // win along vertical?
+    for i in 0..3 {
+        if moves[0 + i] == moves[3 + i] && moves[0] == moves[6 + i] {
+            return Some(moves[0 + i].clone());
+        }
+    }
+
+    // win along negative diagonal?
+    if moves[0] == moves[4] && moves[0] == moves[8] {
+        return Some(moves[4].clone());
+    }
+
+    // win along positive diagonal?
+    if moves[2] == moves[4] && moves[2] == moves[6] {
+        return Some(moves[4].clone());
+    }
+
+    // returns None if there's no winner
+    None
 }
 
 pub fn resign(
