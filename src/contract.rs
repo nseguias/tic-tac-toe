@@ -8,7 +8,7 @@ use sha2::{Digest, Sha256};
 use crate::msg::{
     Config, CreateGameMsg, ExecuteMsg, Game, GameStatus, InstantiateMsg, State, SubmitMoveMsg,
 };
-use cosmwasm_std::{entry_point, DepsMut, Env, MessageInfo, Response};
+use cosmwasm_std::{entry_point, Addr, DepsMut, Env, MessageInfo, Response};
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -138,7 +138,7 @@ pub fn submit_move(
         return Err(ContractError::GameNotInProgress {});
     }
 
-    if game.moves[msg.position as usize] != "-" {
+    if game.moves[msg.position as usize - 1] != "-" {
         return Err(ContractError::PositionTaken {});
     }
 
@@ -156,10 +156,13 @@ pub fn submit_move(
 
     // initialize role as String and assign X or O depending on game.players position
     let role: String;
+    let opponent: Addr;
     if game.players[0] == info.sender {
         role = "X".to_string();
+        opponent = game.players[1].clone();
     } else {
         role = "O".to_string();
+        opponent = game.players[0].clone();
     }
 
     // add player's decision in the correct position with their corresponding letter
@@ -182,11 +185,13 @@ pub fn submit_move(
     // set winner to player's address
     if winner == Some("0".to_string()) {
         game.winner = Some(game.players[1].clone());
-    } else if winner != None {
+    } else if winner != None && winner != Some("-".to_string()) {
         game.winner = Some(game.players[0].clone());
     }
 
-    // TO-DO: change next_turn address
+    // TO-DO: change next_turn address. Would be nice to track opponents address in a variable
+    game.next_turn = Some(opponent);
+    GAME.save(deps.storage, msg.game_id, &game)?;
 
     Ok(Response::new()
         .add_attribute("action", "submit_move")
