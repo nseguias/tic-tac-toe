@@ -34,7 +34,6 @@ fn proper_instantiation() {
 
     // attributes, latest_game_id, and contract owner as expected & state
     assert_eq!(res_expected, res);
-    assert_eq!(res.attributes.len(), 2);
     assert_eq!(state.latest_game_id, 0);
     assert_eq!(config.owner, "instantiatoor");
 }
@@ -71,7 +70,6 @@ fn creating_a_game() {
 
     // attributes as expected & game_id correct & latest_game updated
     assert_eq!(res_expected, res);
-    assert_eq!(res.attributes.len(), 3);
     assert_eq!(game.id, 0);
     assert_eq!(state.latest_game_id, 1);
 }

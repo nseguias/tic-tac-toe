@@ -66,7 +66,7 @@ pub fn create_game(
         next_turn: None,
         winner: None,
     };
-    GAME.save(deps.storage, 0, &new_game)?;
+    GAME.save(deps.storage, state.latest_game_id, &new_game)?;
 
     // increments latest_game_id and saves it to storage
     STATE.save(
@@ -102,7 +102,7 @@ pub fn join_game(
     // calculate hash of concatenated strings using Sha256
     let hash = Sha256::new()
         .chain_update(game.players[0].to_string())
-        .chain_update(info.sender.as_str())
+        .chain_update(info.sender.to_string())
         .finalize();
 
     if hash[0].leading_zeros() != 0 {
@@ -118,6 +118,7 @@ pub fn join_game(
 
     // set game status to InProgress (from Open) and save to storage
     game.status = GameStatus::InProgress;
+    // TO-DO: check 0 hardcoded
     GAME.save(deps.storage, 0, &game)?;
 
     Ok(Response::new()
@@ -134,6 +135,12 @@ pub fn submit_move(
 ) -> Result<Response, ContractError> {
     let mut game = GAME.load(deps.storage, msg.game_id)?;
 
+    if msg.position < 1 || msg.position > 9 {
+        return Err(ContractError::InvalidPosition {
+            position: msg.position.to_string(),
+        });
+    }
+
     if game.status != GameStatus::InProgress {
         return Err(ContractError::GameNotInProgress {});
     }
@@ -144,12 +151,6 @@ pub fn submit_move(
 
     if game.next_turn != Some(info.sender.clone()) {
         return Err(ContractError::NotYourTurn {});
-    }
-
-    if msg.position < 1 || msg.position > 9 {
-        return Err(ContractError::InvalidPosition {
-            position: msg.position.to_string(),
-        });
     }
 
     // TO-DO: check all edge cases for failure
@@ -183,7 +184,7 @@ pub fn submit_move(
     }
 
     // set winner to player's address
-    if winner == Some("0".to_string()) {
+    if winner == Some("O".to_string()) {
         game.winner = Some(game.players[1].clone());
     } else if winner != None && winner != Some("-".to_string()) {
         game.winner = Some(game.players[0].clone());
