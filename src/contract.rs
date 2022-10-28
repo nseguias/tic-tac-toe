@@ -118,8 +118,8 @@ pub fn join_game(
 
     // set game status to InProgress (from Open) and save to storage
     game.status = GameStatus::InProgress;
-    // TO-DO: check 0 hardcoded
-    GAME.save(deps.storage, 0, &game)?;
+
+    GAME.save(deps.storage, msg.game_id, &game)?;
 
     Ok(Response::new()
         .add_attribute("action", "join_game")
