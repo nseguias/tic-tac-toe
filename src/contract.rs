@@ -124,7 +124,7 @@ pub fn join_game(
     Ok(Response::new()
         .add_attribute("action", "join_game")
         .add_attribute("game_id", game.id.to_string())
-        .add_attribute("X", game.next_turn.unwrap())) // TO-DO: fix unwrap()
+        .add_attribute("X", game.next_turn.unwrap()))
 }
 
 pub fn submit_move(
@@ -203,7 +203,6 @@ pub fn submit_move(
 
 fn check_winner(moves: Vec<String>) -> Option<String> {
     // checks if same role is in the winning positions, returns winning role or None if nobody won.
-    // TO-DO: it could return "-" so needs to be handled later (or fixed if time permits)
 
     // win along horizontal?
     for i in 0..3 {
