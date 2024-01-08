@@ -8,3 +8,5 @@ Rules for tic-tac-toe:
 * The roles of “X” and “O” are decided as follows. The user's public keys are concatenated and the result is hashed. If the first bit of the output is 0, then the game's initiator (whoever posted the invitation) plays "O" and the second player plays "X" and vice versa. “X” has the first move.
 * Both users submit transactions to the network to make their moves until the game is complete.
 * The game needs to support multiple concurrent games sessions/players.
+
+NOTE: this was a technical challenge and can be improved in several ways. Time was a constrain
