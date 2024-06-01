@@ -9,4 +9,4 @@ Rules for tic-tac-toe:
 * Both users submit transactions to the network to make their moves until the game is complete.
 * The game needs to support multiple concurrent games sessions/players.
 
-NOTE: this was a technical challenge and can be improved in several ways. Time was a constrain
+NOTE: this was a technical challenge and can be improved in several ways. Time was a constrain and it was done as quick as possible to get a functional program to discuss later.
